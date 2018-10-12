@@ -6,6 +6,7 @@ import glob,os
 import plotly.offline as py
 from plotly.graph_objs import Scatter, Layout
 import pprint as pp
+import calendar
 import plotly.graph_objs as go 
 py.init_notebook_mode(connected=True)
 
@@ -54,7 +55,6 @@ def read_xlsx(all_files , sheet_index):
 	#df_new=DataFrame(dic)
 	return( r_df )
 
-
 def upgrade_df(df , a_list):
 	'''给dataframe添加特定的列，例如
 	upgrade_df(all_df1, [ ['完成项目总数','完成商业项目数','完成个性化数','+'] , ['在线项目总数','下机项目数','接入个性化数','+']])  '''
@@ -72,7 +72,9 @@ def upgrade_df(df , a_list):
 						flag = True
 				df[result][bool_list] = tt
 			elif symbol == '/':
-				df[result][bool_list]  = df[a[0]][bool_list]  / df[a[1]][bool_list] 
+				df[result][bool_list]  = df[a[0]][bool_list]  / df[a[1]][bool_list]
+			elif symbol == '-' : 
+				df[result][bool_list]  = df[a[0]][bool_list]  - df[a[1]][bool_list]
 			else:
 				sys.exit('{0} is error'.format(symbol))
 		else:
@@ -80,9 +82,49 @@ def upgrade_df(df , a_list):
 				df[result] = df[a].sum()
 			elif symbol == '/':
 				df[result] = df[a[0]] / df[a[1]]
+			elif symbol == '-':
+				df[result] = df[a[0]] - df[a[1]]
 			else:
 				sys.exit('{0} is error'.format(symbol))
 
+def add_week(df , key):
+	def date2week(tt):
+		year, month , day =tt.year , tt.month, tt.day
+		calendar.setfirstweekday(0)
+		x= np.array(calendar.monthcalendar(year, month))
+		if x[0][0] == 0:
+			week_number = np.where(x ==day)[0][0] -1 
+		else:
+			week_number = np.where(x ==day)[0][0]
+		if week_number == -1 : 
+			if month == 1 : 
+				y = np.array(calendar.monthcalendar(year-1, 12))
+				if y[0][0] == 0 :
+					tt = y.shape[0] - 1 
+				else:
+					tt = y.shape[0]
+				return('{0}月{1}周'.format('12' , tt+1))
+			else: 
+				y = np.array(calendar.monthcalendar(year, month-1))
+				if y[0][0] == 0 :
+					tt = y.shape[0] - 1 
+				else:
+					tt = y.shape[0]
+				return('{0}月{1}周'.format(month-1 , tt+1))
+		else:
+			return ('{0}月{1}周'.format(month , week_number+1))
+	df['week_number'] = list(map(date2week , df[key]))
+def sort_by_index(df):
+	tt = lambda x:int(x.replace('月','').replace('周','').replace('-',''))
+	if type(df.index) == pd.MultiIndex:
+		df['seq'] = list(map(tt , df.index.get_level_values(0)))
+	else:
+		df['seq'] = list(map(tt , df.index))
+	df = df.sort_values(by='seq').drop(['seq'],axis=1)
+	return df
+
+def retype(df,key,function):
+	df[key] = list(map(function , df[key]))
 
 class myPlot():
 	def __init__(self, df ) :
@@ -126,6 +168,7 @@ class myPlot():
 					x=df.index,
 					y=df[j]
 					)
+				#print(df.index)
 				traces+=[trace_tmp]
 		if not fig_title :  fig_title="&".join(y)+tag + "趋势图"  #图形标题
 		x_axis_template=dict(
@@ -164,7 +207,7 @@ class myPlot():
 			data=data,
 			layout=layout
 		)
-		py.iplot(fig )		
+		py.iplot(fig )
 
 class format():
 	def __init__(self, df, x ,y ):
@@ -192,6 +235,13 @@ class format():
 				sys.exit('{0} is error'.format(symbol))
 			col_list.append(new_col)
 		return(self.extract_column(col_list + extract))
+	def judge_and_replace(self , key , value , method =None, new_key=None):
+		if not new_key:
+			new_key = '{0}_bool'.format(key)
+		if method :
+			self.df[new_key] = getattr(self.df[key],method) > value
+		else:
+			self.df[new_key] = self.df[key] > value
 	def select_by_value(self , key ,value):
 		self.df = self.df[self.df[key] == value]
 	def extract_column(self, col_list):
@@ -220,7 +270,8 @@ class format():
 				r_df = self.df.groupby(self.x).count()
 		elif stat_type == 'sum':
 			if self.group_col and not self.average_col: 
-				r_df = self.df.groupby([self.x , self.group_col]).sum().unstack()
+				r_df = self.df.groupby([self.x , self.group_col]).sum().unstack().unstack()
+				#print(r_df.index)
 			elif self.average_col and not self.group_col :
 				r_df = self.df.groupby([self.x , self.average_col]).sum().groupby(self.x).mean()
 			elif self.average_col and  self.group_col :
@@ -240,6 +291,7 @@ class format():
 				r_df = self.df.groupby(self.x).mean()
 		else:
 			sys.exit('{0} is error'.format(stat_type))
+		#print('mmm')
 		return (r_df)
 
 
