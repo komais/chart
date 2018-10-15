@@ -57,7 +57,8 @@ def read_xlsx(all_files , sheet_index):
 
 def upgrade_df(df , a_list):
 	'''给dataframe添加特定的列，例如
-	upgrade_df(all_df1, [ ['完成项目总数','完成商业项目数','完成个性化数','+'] , ['在线项目总数','下机项目数','接入个性化数','+']])  '''
+	upgrade_df(all_df1, [ ['完成项目总数',['完成商业项目数','完成个性化数'],'+'] ,
+	['在线项目总数',['下机项目数','接入个性化数'],'/']])  '''
 	for result , a  ,symbol in a_list : 
 		if result in df.columns:
 			bool_list = df[ result ].isna()
@@ -87,10 +88,10 @@ def upgrade_df(df , a_list):
 			else:
 				sys.exit('{0} is error'.format(symbol))
 
-def add_week(df , key):
+def add_week(df , key , start = 0 ):
 	def date2week(tt):
 		year, month , day =tt.year , tt.month, tt.day
-		calendar.setfirstweekday(0)
+		calendar.setfirstweekday(start)
 		x= np.array(calendar.monthcalendar(year, month))
 		if x[0][0] == 0:
 			week_number = np.where(x ==day)[0][0] -1 
@@ -114,6 +115,7 @@ def add_week(df , key):
 		else:
 			return ('{0}月{1}周'.format(month , week_number+1))
 	df['week_number'] = list(map(date2week , df[key]))
+
 def sort_by_index(df):
 	tt = lambda x:int(x.replace('月','').replace('周','').replace('-',''))
 	if type(df.index) == pd.MultiIndex:
@@ -239,7 +241,7 @@ class format():
 		if not new_key:
 			new_key = '{0}_bool'.format(key)
 		if method :
-			self.df[new_key] = getattr(self.df[key],method) > value
+			self.df[new_key] = getattr(self.df[key] , method) > value
 		else:
 			self.df[new_key] = self.df[key] > value
 	def select_by_value(self , key ,value):
