@@ -165,12 +165,14 @@ class myPlot():
 					traces+=[trace_tmp]
 		else:
 			for j in y: 
+				#print(df.index)
+
 				trace_tmp=plot_type[fig_type]( 
 					name=j, 
 					x=df.index,
 					y=df[j]
 					)
-				#print(df.index)
+				print(df.index)
 				traces+=[trace_tmp]
 		if not fig_title :  fig_title="&".join(y)+tag + "趋势图"  #图形标题
 		x_axis_template=dict(
@@ -179,7 +181,8 @@ class myPlot():
 			nticks=20,
 			showline=True,
 			title=tag,
-			mirror='all'
+			mirror='all',
+			type="category",
 		)
 		
 		y_axis_template=dict(
@@ -272,7 +275,7 @@ class format():
 				r_df = self.df.groupby(self.x).count()
 		elif stat_type == 'sum':
 			if self.group_col and not self.average_col: 
-				r_df = self.df.groupby([self.x , self.group_col]).sum().unstack().unstack()
+				r_df = self.df.groupby([self.x , self.group_col]).sum().unstack()#.unstack() ##2.1.3 in analysisi
 				#print(r_df.index)
 			elif self.average_col and not self.group_col :
 				r_df = self.df.groupby([self.x , self.average_col]).sum().groupby(self.x).mean()
