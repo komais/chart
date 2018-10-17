@@ -80,7 +80,7 @@ def upgrade_df(df , a_list):
 				sys.exit('{0} is error'.format(symbol))
 		else:
 			if symbol == '+' :
-				df[result] = df[a].sum()            
+				df[result] = df[a].sum(axis=1)
 			elif symbol == '/':
 				df[result] = df[a[0]] / df[a[1]]
 			elif symbol == '-':
