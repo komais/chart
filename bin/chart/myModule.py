@@ -172,7 +172,7 @@ class myPlot():
 					x=df.index,
 					y=df[j]
 					)
-				print(df.index)
+				#print(df.index)
 				traces+=[trace_tmp]
 		if not fig_title :  fig_title="&".join(y)+tag + "趋势图"  #图形标题
 		x_axis_template=dict(

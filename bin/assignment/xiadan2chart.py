@@ -82,29 +82,39 @@ def main():
 			formatter_class=argparse.RawDescriptionHelpFormatter,
 			epilog='author:\t{0}\nmail:\t{1}'.format(__author__,__mail__))
 	parser.add_argument('-p','--pathway',help='pathway',dest='pathway',required=True)
-	#parser.add_argument('-g','--group',help='group name',dest='group',required=True)
+	parser.add_argument('-fw','--fweek',help='file week name',dest='fweek',required=True)
 	parser.add_argument('-w','--week',help='week name',dest='week',required=True)
 	parser.add_argument('-o','--output',help='output file',dest='output',required=True)
-	
+	parser.add_argument('-e','--ee',help='extract job file',dest='ee',action='store_true')
 	args=parser.parse_args()
 
-	file_pathway = get_files(args.pathway, args.week)
+	file_pathway = get_files(args.pathway, args.fweek)
 	result_dict = {}
-	for a_file in file_pathway:
-		print(a_file)
-		new_df , old_df = read_xlsx( a_file , args.week , 0 ) 
-		#pp.pprint(new_df)
-		#pp.pprint(old_df)
-		new_list = [ project(i) for i in new_df.iterrows() ]
-		old_list = [ project(i) for i in old_df.iterrows() ]
-		result_dict = init_dict( new_list ,result_dict ) 
-		#pp.pprint(result_dict)
+	if args.ee:
+		pd_list = []
+		for a_file in file_pathway:
+			new_df , old_df = read_xlsx( a_file , args.week , 0 ) 
+			#print(new_df)
+			pd_list.append(new_df)
+		new_df = pd.concat(pd_list, axis=0 , sort=False, join='outer')
+		with pd.ExcelWriter(args.output , engine='openpyxl') as writer:
+			new_df.to_excel(writer, sheet_name='Sheet1')
+	else :
+		for a_file in file_pathway:
+			#print(a_file)
+			new_df , old_df = read_xlsx( a_file , args.week , 0 ) 
+			#pp.pprint(new_df)
+			#pp.pprint(old_df)
+			new_list = [ project(i) for i in new_df.iterrows() ]
+			old_list = [ project(i) for i in old_df.iterrows() ]
+			result_dict = init_dict( new_list ,result_dict ) 
+			#pp.pprint(result_dict)
 
-		get_number_for_this_week( result_dict , new_list) 
-		get_number_for_last_week( result_dict , old_list)
-		result_df = pd.DataFrame( result_dict )
-	with pd.ExcelWriter(args.output) as writer:
-		result_df.T.to_excel(writer, sheet_name='Sheet1')
+			get_number_for_this_week( result_dict , new_list) 
+			get_number_for_last_week( result_dict , old_list)
+			result_df = pd.DataFrame( result_dict )
+		with pd.ExcelWriter(args.output) as writer:
+			result_df.T.to_excel(writer, sheet_name='Sheet1')
 
 
 if __name__ == '__main__':
