@@ -300,15 +300,16 @@ class format():
 		return (r_df)
 
 
-def get_rank(df , index_col , colname , used_date = None , quantile=0.8, compare='>' , used_column='日期（格式“月-周次”）' , exclude = []):
+def get_rank(df , index_col , colname , used_date = None , quantile=0.8, compare='>' , used_column='日期（格式“月-周次”）' , exclude = [] ,sort_index=False):
 	if len(exclude) > 0 : df.drop(exclude)
 
 	if used_date : 
 		ss = df[[index_col,colname, used_column ]].groupby([used_column,index_col]).sum()
+		if sort_index : ss=sort_by_index(ss)
 		a_df = ss.loc[ss.index.get_level_values(0).unique()[-used_date:],].groupby(index_col).sum()
 	else: 
 		a_df = df[[index_col , colname]].groupby(index_col).sum()
-	
+	#print (a_df)
 	value = float(a_df.quantile( quantile ))
 	if compare == '>':
 		bool_list = a_df[colname] >=  value
@@ -318,7 +319,7 @@ def get_rank(df , index_col , colname , used_date = None , quantile=0.8, compare
 		r_df = a_df.loc[a_df.index[bool_list],].sort_values(colname )
 	return (r_df)
 
-def get_trend(df, index_col , value_col , used_date = None ,quantile=0.8, compare='>' , trend = False , used_column='日期（格式“月-周次”）' , exclude=[]): 
+def get_trend(df, index_col , value_col , used_date = None ,quantile=0.8, compare='>' , trend = False , used_column='日期（格式“月-周次”）' , exclude=[] , sort_index=False): 
 	increasing = lambda L: all(x<=y for x, y in zip(L, L[1:]))
 	decreasing = lambda L: all(x>=y for x, y in zip(L, L[1:]))
 
@@ -326,6 +327,7 @@ def get_trend(df, index_col , value_col , used_date = None ,quantile=0.8, compar
 
 	tt = df[[index_col,used_column, value_col]]
 	ss = tt.pivot(index= index_col ,columns=used_column, values=value_col)
+	if sort_index :  ss=sort_by_index(ss.T).T
 	if used_date:
 		ss = ss.loc[: , ss.columns[-used_date:]]
 	if compare == '>':
