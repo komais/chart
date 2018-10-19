@@ -103,7 +103,7 @@ def main():
 		for a_file in file_pathway:
 			#print(a_file)
 			new_df , old_df = read_xlsx( a_file , args.week , 0 ) 
-			#pp.pprint(new_df)
+			pp.pprint(new_df)
 			#pp.pprint(old_df)
 			new_list = [ project(i) for i in new_df.iterrows() ]
 			old_list = [ project(i) for i in old_df.iterrows() ]
