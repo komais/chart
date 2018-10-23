@@ -30,6 +30,7 @@ class project():
 		self.status = str(content[15])
 		self.finish_report = str(content[17])
 
+
 def get_files(pathway , week):
 	''' 输入是一个路径，下面包含xlsx， 返回第一个excel的指定的sheet的titile'''
 	all_files = glob.glob("{0}/*{1}.xlsx".format(pathway, week))  #文件存储路径
@@ -38,22 +39,25 @@ def get_files(pathway , week):
 	else:
 		return( all_files )
 
-def read_xlsx(file1 , week, sheet_index):
+def read_xlsx(file1 , week, sheet_index , index_col=1 ):
 	''' 读取所有文件指定的sheet，返回一个大的dataframe'''
 	df=pd.read_excel(file1,sheet_name= sheet_index )
 	df=df.fillna(0)
-	df = df.set_index(df.columns[1])
-	this_week_df = df.loc[week , :]
-	before_index = df.index.unique().get_loc( week )
-	before_week_df = df.loc[ df.index.unique()[:before_index], : ]
-	return( this_week_df, before_week_df )
+	df = df.set_index(df.columns[ index_col ])
+	if week in df.index:
+		this_week_df = df.loc[week , :]
+		before_index = df.index.unique().get_loc( week )
+		before_week_df = df.loc[ df.index.unique()[:before_index], : ]
+		return( this_week_df, before_week_df , True)
+	else:
+		return False,False ,False
 
 
 def init_dict(a_list , r_dict ):
-	index_list = ['组别' , '周次' , '总下单数','完成下单数', '应交高质量报告数','提交高质量报告数',
-	              '延期项目数','暂停项目数']
+	index_list = ['组别' , '周次' , '总下单数','完成下单数', '应交高质量报告数',
+	'提交高质量报告数','延期项目数','暂停项目数','内部沟通','市场支持','出差','禅道bug']
 	for a_project in a_list:
-		print(a_project.person)
+		#print(a_project.person)
 		if not a_project.person in r_dict:
 			r_dict[a_project.person] = pd.Series(0 , index= index_list)
 		r_dict[a_project.person].loc['组别'] = a_project.group_name 
@@ -77,6 +81,16 @@ def get_number_for_last_week(r_dict , a_list):
 		a_item = r_dict[ a_project.person ]
 		if '延期' in a_project.status : a_item.loc['延期项目数'] += 1 
 
+def add_other_job(r_dict, a_df):
+	for i in a_df.iterrows():
+		print(i[1][0])
+		job_type = i[1][0]  ## 由于week做了index，少了一列，编号都提前
+		if job_type not in ['内部沟通','市场支持','出差','禅道bug'] :  continue
+		job_dutyer = i[1][5].split('、')
+		for a_people in job_dutyer:
+			if a_people in r_dict:
+				r_dict[a_people].loc[job_type] += 1 
+
 def main():
 	parser=argparse.ArgumentParser(description=__doc__,
 			formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -99,19 +113,26 @@ def main():
 		new_df = pd.concat(pd_list, axis=0 , sort=False, join='outer')
 		with pd.ExcelWriter(args.output , engine='openpyxl') as writer:
 			new_df.to_excel(writer, sheet_name='Sheet1')
-	else :
+	else : 
 		for a_file in file_pathway:
 			#print(a_file)
-			new_df , old_df = read_xlsx( a_file , args.week , 0 ) 
-			pp.pprint(new_df)
+			new_df , old_df , flag = read_xlsx( a_file , args.week , 0 ) 
+			#pp.pprint(new_df)
 			#pp.pprint(old_df)
-			new_list = [ project(i) for i in new_df.iterrows() ]
-			old_list = [ project(i) for i in old_df.iterrows() ]
-			result_dict = init_dict( new_list ,result_dict ) 
+			if flag : 
+				new_list = [ project(i) for i in new_df.iterrows() ]
+				old_list = [ project(i) for i in old_df.iterrows() ]
+				result_dict = init_dict( new_list ,result_dict ) 
 			#pp.pprint(result_dict)
+				get_number_for_this_week( result_dict , new_list) 
+				get_number_for_last_week( result_dict , old_list)
+			
+			new_df2 , old_df2 ,flag= read_xlsx( a_file , args.week , 1, index_col=0 )
+			if flag : 
+				#pp.pprint(new_df2)
+				add_other_job(result_dict , new_df2)
 
-			get_number_for_this_week( result_dict , new_list) 
-			get_number_for_last_week( result_dict , old_list)
+			
 			result_df = pd.DataFrame( result_dict )
 		with pd.ExcelWriter(args.output) as writer:
 			result_df.T.to_excel(writer, sheet_name='Sheet1')
