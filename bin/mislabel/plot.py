@@ -33,67 +33,38 @@ class myPlot():
 		self.title = title
 		self.color_by = color_by
 
-
-	def line_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y=''):
-		df =self.df
+	def redef_x(self , x , xlabel ):
 		if x : 
 			self.xlabel = x
-			x = self.df[x]
+			self.x = self.df[x]
 		else:
 			self.xlabel = 'all_index'
-			x = self.df.index
+			self.x = self.df.index
+		if xlabel: self.xlabel = xlabel
+
+	def redef_y(self , y , ylabel):
+		if y and not isinstance(y , list) : sys.exit('y must be list')
 		if y : 
 			self.ylabel = "&".join(y)
+			self.y = y
 		else:
-			y = set(df.columns.get_level_values(0))
+			self.y = set(self.df.columns.get_level_values(0))
 			self.ylabel = 'all_column'
-		if xlabel: self.xlabel = xlabel
 		if ylabel: self.ylabel = ylabel
-		if title : self.title  = title
 
-		traces = []
-		if isinstance( self.color_by ,pd.core.frame.DataFrame): 
-			category = self.color_by.iloc[: , 0].unique()
-			if len(category) >2:
-				col_list = cl.scales[len(category)]['div']['RdYlBu']
-			elif len(category) == 2:
-				col_list = ['rgb(252,141,89)', 'rgb(145,191,219)']
-			else:
-				col_list = ['rgb(252,141,89)']
-			category_dict = { j:col_list[i] for i,j in enumerate(category)}
-			category_flag = { j : 0 for j in category}
+	def choose_col(self):
+		category = self.color_by.iloc[: , 0].unique()
+		if len(category) > 2:
+			col_list = cl.scales[len(category)]['div']['RdYlBu']
+		elif len(category) == 2:
+			col_list = ['rgb(252,141,89)', 'rgb(145,191,219)']
+		else:
+			col_list = ['rgb(252,141,89)']
+		category_dict = { j:col_list[i] for i,j in enumerate(category)}
+		category_flag = { j : 0 for j in category}
+		return category_dict,category_flag
 
-		for j in y: 
-			#print(df.index)
-			if isinstance( self.color_by ,pd.core.frame.DataFrame):
-				group_name  = self.color_by.iloc[:,0][j]
-				group_color = category_dict[ group_name ] 
-				if category_flag[group_name] : 
-					trace_tmp=go.Scatter( 
-						name= group_name ,
-						x=x,
-						y=df[j],
-						legendgroup=group_name,
-						showlegend=False,
-						line = dict(color= group_color),
-					)
-				else:
-					trace_tmp=go.Scatter( 
-						name= group_name ,
-						x=x,
-						y=df[j],
-						legendgroup=group_name,
-						showlegend=True,
-						line = dict(color= group_color),
-					)
-					category_flag[group_name] += 1 
-			else:
-				trace_tmp=go.Scatter( 
-					name=j, 
-					x=x,
-					y=df[j],
-				)
-			traces+=[trace_tmp]
+	def set_layout(self , xtype):
 		x_axis_template=dict(
 			showgrid=True,  #网格
 			zeroline=True,  #是否显示基线,即沿着(0,0)画出x轴和y轴
@@ -101,7 +72,6 @@ class myPlot():
 			showline=True,
 			title=self.xlabel,
 			mirror='all',
-			#type="category",
 		)
 		if xtype: x_axis_template['type'] = xtype
 		
@@ -120,43 +90,18 @@ class myPlot():
 			xaxis=x_axis_template,
 			yaxis=y_axis_template
 			)
-		data=traces
-		fig=go.Figure(
-			data=data,
-			layout=layout
-		)
-		py.iplot(fig )
+		return (layout)
 
-	def scatter_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1):
-		df =self.df
-		if x : 
-			self.xlabel = x
-			x = self.df[x]
-		else:
-			self.xlabel = 'all_index'
-			x = self.df.index
-		if y : 
-			self.ylabel = "&".join(y)
-		else:
-			y = set(df.columns.get_level_values(0))
-			self.ylabel = 'all_column'
-		if xlabel: self.xlabel = xlabel
-		if ylabel: self.ylabel = ylabel
+	def line_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y=''):
+		myPlot.redef_x(self, x, xlabel)
+		myPlot.redef_y(self , y ,ylabel)
 		if title : self.title  = title
 
 		traces = []
-		if isinstance( self.color_by ,pd.core.frame.DataFrame): 
-			category = self.color_by.iloc[: , 0].unique()
-			if len(category) >2:
-				col_list = cl.scales[len(category)]['div']['RdYlBu']
-			elif len(category) == 2:
-				col_list = ['rgb(252,141,89)', 'rgb(145,191,219)']
-			else:
-				col_list = ['rgb(252,141,89)']
-			category_dict = { j:col_list[i] for i,j in enumerate(category)}
-			category_flag = { j : 0 for j in category}
+		if isinstance( self.color_by , pd.core.frame.DataFrame): 
+			category_dict , category_flag = myPlot.choose_col(self)
 
-		for j in y: 
+		for j in self.y: 
 			#print(df.index)
 			if isinstance( self.color_by ,pd.core.frame.DataFrame):
 				group_name  = self.color_by.iloc[:,0][j]
@@ -164,8 +109,53 @@ class myPlot():
 				if category_flag[group_name] : 
 					trace_tmp=go.Scatter( 
 						name= group_name ,
-						x=x,
-						y=df[j],
+						x=self.x,
+						y=self.df[j],
+						legendgroup=group_name,
+						showlegend=False,
+						line = dict(color= group_color),
+					)
+				else:
+					trace_tmp=go.Scatter( 
+						name= group_name ,
+						x=self.x,
+						y=self.df[j],
+						legendgroup=group_name,
+						showlegend=True,
+						line = dict(color= group_color),
+					)
+					category_flag[group_name] += 1 
+			else:
+				trace_tmp=go.Scatter( 
+					name=j, 
+					x=self.x,
+					y=self.df[j],
+				)
+			traces+=[trace_tmp]
+
+		layout = myPlot.set_layout(self, xtype)
+		fig=go.Figure( data=traces, layout=layout)
+		py.iplot(fig )
+
+	def scatter_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1):
+		myPlot.redef_x(self, x, xlabel)
+		myPlot.redef_y(self , y ,ylabel)
+		if title : self.title  = title
+
+		traces = []
+		if isinstance( self.color_by , pd.core.frame.DataFrame): 
+			category_dict , category_flag = myPlot.choose_col(self)
+
+		for j in self.y: 
+			#print(df.index)
+			if isinstance( self.color_by ,pd.core.frame.DataFrame):
+				group_name  = self.color_by.iloc[:,0][j]
+				group_color = category_dict[ group_name ] 
+				if category_flag[group_name] : 
+					trace_tmp=go.Scatter( 
+						name= group_name ,
+						x=self.x,
+						y=self.df[j],
 						legendgroup=group_name,
 						showlegend=False,
 						mode = 'markers',
@@ -174,8 +164,8 @@ class myPlot():
 				else:
 					trace_tmp=go.Scatter( 
 						name= group_name ,
-						x=x,
-						y=df[j],
+						x=self.x,
+						y=self.df[j],
 						legendgroup=group_name,
 						showlegend=True,
 						mode = 'markers',
@@ -185,41 +175,47 @@ class myPlot():
 			else:
 				trace_tmp=go.Scatter( 
 					name=j, 
-					x=x,
-					y=df[j],
+					x=self.x,
+					y=self.df[j],
 					mode = 'markers',
 					marker = dict(opacity= alpha),
 				)
 			traces+=[trace_tmp]
-		x_axis_template=dict(
-			showgrid=True,  #网格
-			zeroline=True,  #是否显示基线,即沿着(0,0)画出x轴和y轴
-			nticks=20,
-			showline=True,
-			title=self.xlabel,
-			mirror='all',
-			#type="category",
-		)
-		if xtype: x_axis_template['type'] = xtype
+		layout = myPlot.set_layout(self, xtype)
+		fig=go.Figure( data=traces, layout=layout)
+		py.iplot(fig )
+	def heat_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1 ,color='Hot'):
+		''' Greys,YlGnBu,Greens,YlOrRd,Bluered,RdBu,Reds,Blues,Picnic,Rainbow,Portland,Jet,Hot,Blackbody,Earth,Electric,Viridis,Cividis. '''
 		
-		y_axis_template=dict(
-			showgrid=True,  #网格
-			zeroline=True,  #是否显示基线,即沿着(0,0)画出x轴和y轴
-			nticks=20,
-			showline=True,
-			title=self.ylabel, #y轴标题
-			mirror='all'
-		)
-		
+		data = [go.Heatmap( z=self.df.values.tolist(), 
+		                    x = self.df.index,
+							y = self.df.columns,
+		                    colorscale=color)]
+		py.iplot(data)
 
-		layout=go.Layout(
-			title=self.title,
-			xaxis=x_axis_template,
-			yaxis=y_axis_template
-			)
-		data=traces
-		fig=go.Figure(
-			data=data,
-			layout=layout
-		)
+	def box_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1):
+		myPlot.redef_x(self, x, xlabel)
+		myPlot.redef_y(self , y ,ylabel)
+		if title : self.title  = title
+
+		traces = []
+		if isinstance( self.color_by , pd.core.frame.DataFrame): 
+			category_dict , category_flag = myPlot.choose_col(self)
+
+		for j in self.y: 
+			#print(df.index)
+			if isinstance( self.color_by ,pd.core.frame.DataFrame):
+				print('Error: donot support group')
+				pass
+			else:
+				trace_tmp=go.Box( 
+					name=j, 
+					#x=x,
+					y=self.df[j],
+					#mode = 'markers',
+					#marker = dict(opacity= alpha),
+				)
+			traces+=[trace_tmp]
+		layout = myPlot.set_layout(self, xtype)
+		fig=go.Figure( data=traces, layout=layout)
 		py.iplot(fig )
