@@ -78,6 +78,8 @@ def upgrade_df(df , a_list):
 				df[result][bool_list]  = df[a[0]][bool_list]  / df[a[1]][bool_list]
 			elif symbol == '-' : 
 				df[result][bool_list]  = df[a[0]][bool_list]  - df[a[1]][bool_list]
+			elif symbol == '*' : 
+				df[result][bool_list]  = df[a[0]][bool_list]  * df[a[1]][bool_list]
 			else:
 				sys.exit('{0} is error'.format(symbol))
 		else:
@@ -87,6 +89,8 @@ def upgrade_df(df , a_list):
 				df[result] = df[a[0]] / df[a[1]]
 			elif symbol == '-':
 				df[result] = df[a[0]] - df[a[1]]
+			elif symbol == '*':
+				df[result] = df[a].product(axis=1)
 			else:
 				sys.exit('{0} is error'.format(symbol))
 
