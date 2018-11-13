@@ -27,6 +27,8 @@ def get_date(name,df):
 		date=list(set(list(df["日期（格式“月-周次”）"])))
 	elif "日期" in df.columns:
 		date=list(set(list(df["日期"])))
+	elif "周次" in df.columns:
+		date=list(set(list(df["周次"])))
 	else:
 		print("日期 or 日期（格式“月-周次”）")
 		sys.exit()
@@ -104,14 +106,16 @@ def add_week(df , key , start = 0 ):
 					tt = y.shape[0] - 1 
 				else:
 					tt = y.shape[0]
-				return('{0}月{1}周'.format('12' , tt+1))
+				return('{0}月{1}周'.format('12' , tt))
+            #return('{0}月{1}周'.format('12' , tt+1))
 			else: 
 				y = np.array(calendar.monthcalendar(year, month-1))
 				if y[0][0] == 0 :
 					tt = y.shape[0] - 1 
 				else:
 					tt = y.shape[0]
-				return('{0}月{1}周'.format(month-1 , tt+1))
+				return('{0}月{1}周'.format(month-1 , tt))
+            #return('{0}月{1}周'.format(month-1 , tt+1))
 		else:
 			return ('{0}月{1}周'.format(month , week_number+1))
 	df['week_number'] = list(map(date2week , df[key]))
