@@ -12,7 +12,6 @@ import calendar
 import plotly.graph_objs as go 
 import colorlover as cl
 
-py.init_notebook_mode(connected=True)
 
 def qqplot(series , name):
 	tt = series[pd.notna(series )]
@@ -92,7 +91,7 @@ class myPlot():
 			)
 		return (layout)
 
-	def line_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y=''):
+	def line_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='', filename=''):
 		myPlot.redef_x(self, x, xlabel)
 		myPlot.redef_y(self , y ,ylabel)
 		if title : self.title  = title
@@ -135,9 +134,13 @@ class myPlot():
 
 		layout = myPlot.set_layout(self, xtype)
 		fig=go.Figure( data=traces, layout=layout)
-		py.iplot(fig )
+		if filename : 
+			py.plot(fig, filename=filename)
+		else:
+			py.init_notebook_mode(connected=True)
+			py.iplot(fig )
 
-	def scatter_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1):
+	def scatter_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1 , filename='' ):
 		myPlot.redef_x(self, x, xlabel)
 		myPlot.redef_y(self , y ,ylabel)
 		if title : self.title  = title
@@ -183,17 +186,25 @@ class myPlot():
 			traces+=[trace_tmp]
 		layout = myPlot.set_layout(self, xtype)
 		fig=go.Figure( data=traces, layout=layout)
-		py.iplot(fig )
-	def heat_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1 ,color='Hot'):
+		if filename : 
+			py.plot(fig, filename=filename)
+		else:
+			py.init_notebook_mode(connected=True)
+			py.iplot(fig )
+	def heat_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1 ,color='Hot' ,filename=''):
 		''' Greys,YlGnBu,Greens,YlOrRd,Bluered,RdBu,Reds,Blues,Picnic,Rainbow,Portland,Jet,Hot,Blackbody,Earth,Electric,Viridis,Cividis. '''
 		
-		data = [go.Heatmap( z=self.df.values.tolist(), 
+		fig = [go.Heatmap( z=self.df.values.tolist(), 
 		                    x = self.df.index,
 							y = self.df.columns,
 		                    colorscale=color)]
-		py.iplot(data)
+		if filename : 
+			py.plot(fig, filename=filename)
+		else:
+			py.init_notebook_mode(connected=True)
+			py.iplot(fig )
 
-	def box_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1):
+	def box_plot(self , xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1,filename=''):
 		myPlot.redef_x(self, x, xlabel)
 		myPlot.redef_y(self , y ,ylabel)
 		if title : self.title  = title
@@ -218,4 +229,16 @@ class myPlot():
 			traces+=[trace_tmp]
 		layout = myPlot.set_layout(self, xtype)
 		fig=go.Figure( data=traces, layout=layout)
-		py.iplot(fig )
+		if filename : 
+			py.plot(fig, filename=filename)
+		else:
+			py.init_notebook_mode(connected=True)
+			py.iplot(fig )
+			
+class myDF():
+	def __init__(self , df):
+		self.df = df
+	
+	def normalization(self):
+		df_norm = (self.df - self.df.mean()) / (self.df.max() - self.df.min())
+		return (df_norm)
