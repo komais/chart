@@ -4,6 +4,7 @@ import sys
 import os
 import re
 import pandas as pd
+import pandas
 import numpy as np
 import sys
 from pandas import Series,DataFrame #此两个为pandas中的数据结构，特别是DataFrame 非常实用
@@ -39,13 +40,15 @@ def get_files(pathway , week):
 	else:
 		return( all_files )
 
-def read_xlsx(file1 , week, sheet_index , index_col=1 ):
+def read_xlsx(file1 , week , sheet_index=0 , index_col=1 ):
 	''' 读取所有文件指定的sheet，返回一个大的dataframe'''
 	df=pd.read_excel(file1,sheet_name= sheet_index )
 	df=df.fillna(0)
 	df = df.set_index(df.columns[ index_col ])
 	if week in df.index:
 		this_week_df = df.loc[week , :]
+		if isinstance(this_week_df , pandas.core.series.Series):
+			this_week_df = pd.DataFrame(this_week_df).T
 		before_index = df.index.unique().get_loc( week )
 		before_week_df = df.loc[ df.index.unique()[:before_index], : ]
 		return( this_week_df, before_week_df , True)
@@ -107,9 +110,10 @@ def main():
 	if args.ee:
 		pd_list = []
 		for a_file in file_pathway:
-			new_df , old_df = read_xlsx( a_file , args.week , 0 ) 
+			print(a_file,args.week)
+			new_df , old_df , flag = read_xlsx( a_file , args.week , 0 ) 
 			#print(new_df)
-			pd_list.append(new_df)
+			if flag : pd_list.append(new_df)
 		new_df = pd.concat(pd_list, axis=0 , sort=False, join='outer')
 		with pd.ExcelWriter(args.output , engine='openpyxl') as writer:
 			new_df.to_excel(writer, sheet_name='Sheet1')
