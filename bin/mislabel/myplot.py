@@ -60,7 +60,7 @@ class myPlot():
 		else:
 			col_list = ['rgb(252,141,89)']
 		category_dict = { j:col_list[i] for i,j in enumerate(category)}
-		category_flag = { j : 0 for j in category}
+		category_flag = { j : 0 for j in category}  ## use to store whether used 
 		return category_dict,category_flag
 
 	def set_layout(self , xtype):
@@ -208,11 +208,9 @@ class myPlot():
 		myPlot.redef_x(self, x, xlabel)
 		myPlot.redef_y(self , y ,ylabel)
 		if title : self.title  = title
-
 		traces = []
 		if isinstance( self.color_by , pd.core.frame.DataFrame): 
 			category_dict , category_flag = myPlot.choose_col(self)
-
 		for j in self.y: 
 			#print(df.index)
 			if isinstance( self.color_by ,pd.core.frame.DataFrame):
@@ -234,7 +232,33 @@ class myPlot():
 		else:
 			py.init_notebook_mode(connected=True)
 			py.iplot(fig )
-			
+	def pie_plot(self, xlabel='' , ylabel='' , title='' , x = '' , xtype='' , y='' , alpha=1,filename=''):
+		myPlot.redef_x(self, x, xlabel)
+		myPlot.redef_y(self , y ,ylabel)
+		if title : self.title  = title
+		traces = []
+		if isinstance( self.color_by , pd.core.frame.DataFrame): 
+			category_dict , category_flag = myPlot.choose_col(self)
+		if len(y) != 1 : 
+			sys.exit('y should be in length 1')
+		else : 
+			#print(df.index)
+			if isinstance( self.color_by ,pd.core.frame.DataFrame):
+				print('Error: donot support group')
+				pass
+			else:
+				trace_tmp=go.Pie( 
+					labels=j, 
+					values=self.df[j],
+				)
+			traces+=[trace_tmp]
+		layout = myPlot.set_layout(self, xtype)
+		fig=go.Figure( data=traces, layout=layout)
+		if filename : 
+			py.plot(fig, filename=filename)
+		else:
+			py.init_notebook_mode(connected=True)
+			py.iplot(fig )
 class myDF():
 	def __init__(self , df):
 		self.df = df
